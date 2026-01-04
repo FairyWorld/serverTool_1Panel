@@ -17,14 +17,19 @@ import (
 	"github.com/go-acme/lego/v4/providers/dns/alidns"
 	"github.com/go-acme/lego/v4/providers/dns/clouddns"
 	"github.com/go-acme/lego/v4/providers/dns/cloudflare"
+	"github.com/go-acme/lego/v4/providers/dns/cloudns"
 	"github.com/go-acme/lego/v4/providers/dns/dnspod"
+	"github.com/go-acme/lego/v4/providers/dns/freemyip"
 	"github.com/go-acme/lego/v4/providers/dns/godaddy"
 	"github.com/go-acme/lego/v4/providers/dns/huaweicloud"
 	"github.com/go-acme/lego/v4/providers/dns/namecheap"
 	"github.com/go-acme/lego/v4/providers/dns/namedotcom"
 	"github.com/go-acme/lego/v4/providers/dns/namesilo"
+	"github.com/go-acme/lego/v4/providers/dns/porkbun"
+	"github.com/go-acme/lego/v4/providers/dns/rainyun"
 	"github.com/go-acme/lego/v4/providers/dns/tencentcloud"
 	"github.com/go-acme/lego/v4/providers/dns/volcengine"
+	"github.com/go-acme/lego/v4/providers/dns/westcn"
 	"github.com/go-acme/lego/v4/providers/http/webroot"
 	"github.com/go-acme/lego/v4/registration"
 	"github.com/pkg/errors"
@@ -72,27 +77,36 @@ const (
 	Volcengine   DnsType = "Volcengine"
 	CloudFlare   DnsType = "CloudFlare"
 	CloudDns     DnsType = "CloudDns"
+	ClouDNS      DnsType = "ClouDNS"
+	FreeMyIP     DnsType = "FreeMyIP"
 	NameSilo     DnsType = "NameSilo"
 	NameCheap    DnsType = "NameCheap"
 	NameCom      DnsType = "NameCom"
 	Godaddy      DnsType = "Godaddy"
 	TencentCloud DnsType = "TencentCloud"
 	HuaweiCloud  DnsType = "HuaweiCloud"
+	RainYun      DnsType = "RainYun"
+	WestCN       DnsType = "WestCN"
+	PorkBun      DnsType = "PorkBun"
 )
 
 type DNSParam struct {
-	ID        string `json:"id"`
-	Token     string `json:"token"`
-	AccessKey string `json:"accessKey"`
-	SecretKey string `json:"secretKey"`
-	Email     string `json:"email"`
-	APIkey    string `json:"apiKey"`
-	APIUser   string `json:"apiUser"`
-	APISecret string `json:"apiSecret"`
-	SecretID  string `json:"secretID"`
-	Region    string `json:"region"`
-	ClientID  string `json:"clientID"`
-	Password  string `json:"password"`
+	ID           string `json:"id"`
+	Token        string `json:"token"`
+	AccessKey    string `json:"accessKey"`
+	SecretKey    string `json:"secretKey"`
+	Email        string `json:"email"`
+	APIkey       string `json:"apiKey"`
+	APIUser      string `json:"apiUser"`
+	APISecret    string `json:"apiSecret"`
+	SecretID     string `json:"secretID"`
+	Region       string `json:"region"`
+	ClientID     string `json:"clientID"`
+	Password     string `json:"password"`
+	AuthID       string `json:"authID"`
+	SubAuthID    string `json:"subAuthID"`
+	AuthPassword string `json:"authPassword"`
+	Username     string `json:"username"`
 }
 
 var (
@@ -153,6 +167,21 @@ func (c *AcmeClient) UseDns(dnsType DnsType, params string, websiteSSL model.Web
 		clouddnsConfig.PollingInterval = pollingInterval
 		clouddnsConfig.TTL = ttl
 		p, err = clouddns.NewDNSProviderConfig(clouddnsConfig)
+	case ClouDNS:
+		cloudnsConfig := cloudns.NewDefaultConfig()
+		cloudnsConfig.AuthID = param.AuthID
+		cloudnsConfig.SubAuthID = param.SubAuthID
+		cloudnsConfig.AuthPassword = param.AuthPassword
+		cloudnsConfig.PropagationTimeout = propagationTimeout
+		cloudnsConfig.PollingInterval = pollingInterval
+		cloudnsConfig.TTL = ttl
+		p, err = cloudns.NewDNSProviderConfig(cloudnsConfig)
+	case FreeMyIP:
+		freeMyIpConfig := freemyip.NewDefaultConfig()
+		freeMyIpConfig.Token = param.Token
+		freeMyIpConfig.PropagationTimeout = propagationTimeout
+		freeMyIpConfig.PollingInterval = pollingInterval
+		p, err = freemyip.NewDNSProviderConfig(freeMyIpConfig)
 	case NameCheap:
 		namecheapConfig := namecheap.NewDefaultConfig()
 		namecheapConfig.APIKey = param.APIkey
@@ -201,6 +230,29 @@ func (c *AcmeClient) UseDns(dnsType DnsType, params string, websiteSSL model.Web
 		huaweiCloudConfig.PollingInterval = pollingInterval
 		huaweiCloudConfig.TTL = int32(ttl)
 		p, err = huaweicloud.NewDNSProviderConfig(huaweiCloudConfig)
+	case RainYun:
+		rainyunConfig := rainyun.NewDefaultConfig()
+		rainyunConfig.APIKey = param.APIkey
+		rainyunConfig.PropagationTimeout = propagationTimeout
+		rainyunConfig.PollingInterval = pollingInterval
+		rainyunConfig.TTL = ttl
+		p, err = rainyun.NewDNSProviderConfig(rainyunConfig)
+	case WestCN:
+		westcnConfig := westcn.NewDefaultConfig()
+		westcnConfig.Username = param.Username
+		westcnConfig.Password = param.Password
+		westcnConfig.PropagationTimeout = propagationTimeout
+		westcnConfig.PollingInterval = pollingInterval
+		westcnConfig.TTL = ttl
+		p, err = westcn.NewDNSProviderConfig(westcnConfig)
+	case PorkBun:
+		porkbunConfig := porkbun.NewDefaultConfig()
+		porkbunConfig.APIKey = param.APIkey
+		porkbunConfig.SecretAPIKey = param.SecretKey
+		porkbunConfig.PropagationTimeout = propagationTimeout
+		porkbunConfig.PollingInterval = pollingInterval
+		porkbunConfig.TTL = ttl
+		p, err = porkbun.NewDNSProviderConfig(porkbunConfig)
 	}
 	if err != nil {
 		return err

@@ -20,15 +20,6 @@
             </div>
 
             <div v-else>
-                <div v-if="errStatus === 'err-unsafe'">
-                    <UnSafe />
-                </div>
-                <div v-if="errStatus === 'err-ip'">
-                    <ErrIP />
-                </div>
-                <div v-if="errStatus === 'err-domain'">
-                    <ErrDomain />
-                </div>
                 <div v-if="errStatus.indexOf('code-') !== -1">
                     <ErrCode :code="errStatus.replaceAll('code-', '')" />
                 </div>
@@ -41,12 +32,8 @@
 </template>
 
 <script setup lang="ts" name="login">
-import { checkIsSafety } from '@/api/modules/auth';
 import LoginForm from '../components/login-form.vue';
-import UnSafe from '@/components/error-message/unsafe.vue';
-import ErrIP from '@/components/error-message/err_ip.vue';
 import ErrCode from '@/components/error-message/error_code.vue';
-import ErrDomain from '@/components/error-message/err_domain.vue';
 import ErrFound from '@/components/error-message/404.vue';
 import { ref, onMounted } from 'vue';
 import { GlobalStore } from '@/store';
@@ -66,23 +53,18 @@ const mySafetyCode = defineProps({
 
 const getStatus = async () => {
     let code = mySafetyCode.code;
-    globalStore.entrance = code;
-    await checkIsSafety(code)
-        .then(() => {
-            let info = globalStore.errStatus;
-            if (info?.startsWith('err-') || info?.startsWith('code-')) {
-                errStatus.value = info;
-                init.value = true;
-                return;
-            }
-            errStatus.value = '';
-            init.value = true;
-            getXpackSettingForTheme();
-        })
-        .catch((err) => {
-            errStatus.value = 'code-' + err.status;
-            init.value = true;
-        });
+    if (code != '') {
+        globalStore.entrance = code;
+    }
+    await getXpackSettingForTheme();
+    let info = globalStore.errStatus;
+    if (info?.startsWith('err-') || info?.startsWith('code-')) {
+        errStatus.value = info;
+        init.value = true;
+        return;
+    }
+    errStatus.value = '';
+    init.value = true;
 };
 
 onMounted(() => {

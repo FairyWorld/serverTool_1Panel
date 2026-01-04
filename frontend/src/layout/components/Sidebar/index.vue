@@ -13,19 +13,20 @@
         <el-scrollbar>
             <el-menu
                 :default-active="activeMenu"
-                :router="menuRouter"
+                :router="true"
                 :collapse="isCollapse"
                 :collapse-transition="false"
                 :unique-opened="true"
                 @select="handleMenuClick"
+                class="custom-menu"
             >
                 <SubItem :menuList="routerMenus" />
-                <el-menu-item :index="''">
-                    <el-icon @click="logout">
+                <el-menu-item :index="''" @click="logout">
+                    <el-icon>
                         <SvgIcon :iconName="'p-logout'" />
                     </el-icon>
                     <template #title>
-                        <span @click="logout">{{ $t('commons.login.logout') }}</span>
+                        <span>{{ $t('commons.login.logout') }}</span>
                     </template>
                 </el-menu-item>
             </el-menu>
@@ -35,14 +36,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, defineEmits } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { RouteRecordRaw, useRoute } from 'vue-router';
 import { loadingSvg } from '@/utils/svg';
 import Logo from './components/Logo.vue';
 import Collapse from './components/Collapse.vue';
 import SubItem from './components/SubItem.vue';
 import router, { menuList } from '@/routers/router';
-import { logOutApi } from '@/api/modules/auth';
+import { checkIsIntl, logOutApi } from '@/api/modules/auth';
 import i18n from '@/lang';
 import { ElMessageBox } from 'element-plus';
 import { GlobalStore, MenuStore } from '@/store';
@@ -54,13 +55,7 @@ import PrimaryMenu from '@/assets/images/menu-bg.svg?component';
 const route = useRoute();
 const menuStore = MenuStore();
 const globalStore = GlobalStore();
-defineProps({
-    menuRouter: {
-        type: Boolean,
-        default: true,
-        required: false,
-    },
-});
+
 const activeMenu = computed(() => {
     const { meta, path } = route;
     return isString(meta.activeMenu) ? meta.activeMenu : path;
@@ -68,7 +63,7 @@ const activeMenu = computed(() => {
 const isCollapse = computed((): boolean => menuStore.isCollapse);
 
 let routerMenus = computed((): RouteRecordRaw[] => {
-    return menuStore.menuList.filter((route) => route.meta && !route.meta.hideInSidebar);
+    return menuStore.menuList.filter((route) => route.meta && !route.meta.hideInSidebar) as RouteRecordRaw[];
 });
 
 const screenWidth = ref(0);
@@ -132,15 +127,21 @@ function getCheckedLabels(json: Node): string[] {
 }
 
 const search = async () => {
+    await checkIsSystemIntl();
+    let checkedLabels: any[] = [];
     const res = await getSettingInfo();
     const json: Node = JSON.parse(res.data.xpackHideMenu);
-    const checkedLabels = getCheckedLabels(json);
+    checkedLabels = getCheckedLabels(json);
+
     let rstMenuList: RouteRecordRaw[] = [];
     menuStore.menuList.forEach((item) => {
         let menuItem = JSON.parse(JSON.stringify(item));
         let menuChildren: RouteRecordRaw[] = [];
         if (menuItem.path === '/xpack') {
             if (checkedLabels.length) {
+                menuItem.children = menuItem.children.filter((child: any) => {
+                    return !(globalStore.isIntl && child.path.includes('/xpack/alert'));
+                });
                 menuItem.children.forEach((child: any) => {
                     for (const str of checkedLabels) {
                         if (child.name === str) {
@@ -162,7 +163,7 @@ const search = async () => {
             rstMenuList.push(menuItem);
         } else {
             menuItem.children.forEach((child: any) => {
-                if (child.hidden == undefined || child.hidden == false) {
+                if (!child.hidden) {
                     menuChildren.push(child);
                 }
             });
@@ -173,6 +174,11 @@ const search = async () => {
     menuStore.menuList = rstMenuList;
 };
 
+const checkIsSystemIntl = async () => {
+    const res = await checkIsIntl();
+    globalStore.isIntl = res.data;
+};
+
 onMounted(() => {
     menuStore.setMenuList(menuList);
     search();
@@ -180,7 +186,14 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
-@import './index.scss';
+@use 'index';
+
+.custom-menu .el-menu-item {
+    white-space: normal !important;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    line-height: normal;
+}
 
 .sidebar-container {
     position: relative;

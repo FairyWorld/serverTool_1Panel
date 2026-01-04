@@ -386,7 +386,7 @@ const onConnTerminal = async (title: string, wsID: number, isLocal?: boolean) =>
                 endpoint: '/api/v1/terminals',
                 args: `id=${wsID}`,
                 initCmd: initCmd.value,
-                error: res.data ? '' : 'Authentication failed.  Please check the host information !',
+                error: res.data ? '' : 'Authentication failed. Please check the host information!',
             });
         initCmd.value = '';
     });
@@ -433,7 +433,14 @@ onMounted(() => {
         padding: 0;
     }
     :deep(.el-tabs__item.is-active) {
+        color: var(--panel-terminal-tag-active-text-color);
         background-color: var(--panel-terminal-tag-active-bg-color);
+    }
+    :deep(.el-tabs__item:hover) {
+        color: var(--panel-terminal-tag-hover-text-color);
+    }
+    :deep(.el-tabs__item.is-active:hover) {
+        color: var(--panel-terminal-tag-active-text-color);
     }
 }
 

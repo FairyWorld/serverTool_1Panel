@@ -16,24 +16,25 @@
                 <el-divider v-if="!mobile" direction="vertical" />
             </div>
             <div class="flex flex-wrap items-center">
-                <el-link :underline="false" type="primary" @click="toHalo">
-                    {{ isProductPro ? $t('license.pro') : $t('license.community') }}
+                <el-link :underline="false" class="-ml-2" type="primary" @click="toLxware">
+                    {{ $t(!isProductPro ? 'license.community' : 'license.pro') }}
                 </el-link>
                 <el-link :underline="false" class="version" type="primary" @click="copyText(version)">
                     {{ version }}
                 </el-link>
                 <el-badge is-dot class="-mt-0.5" v-if="version !== 'Waiting' && globalStore.hasNewVersion">
-                    <el-link :underline="false" type="primary" @click="onLoadUpgradeInfo">
-                        （{{ $t('setting.hasNewVersion') }}）
+                    <el-link class="ml-2" :underline="false" type="primary" @click="onLoadUpgradeInfo">
+                        {{ $t('commons.operate.update') }}
                     </el-link>
                 </el-badge>
                 <el-link
                     v-if="version !== 'Waiting' && !globalStore.hasNewVersion"
                     type="primary"
                     :underline="false"
+                    class="ml-2"
                     @click="onLoadUpgradeInfo"
                 >
-                    （{{ $t('setting.upgradeCheck') }}）
+                    {{ $t('commons.operate.update') }}
                 </el-link>
                 <el-tag v-if="version === 'Waiting'" round style="margin-left: 10px">
                     {{ $t('setting.upgrading') }}
@@ -68,7 +69,7 @@
                     {{ upgradeInfo.testVersion }}
                 </el-radio>
             </el-radio-group>
-            <MdEditor v-model="upgradeInfo.releaseNote" previewOnly :theme="isDarkTheme ? 'dark' : 'light'" />
+            <MarkDownEditor :content="upgradeInfo.releaseNote" />
         </div>
         <template #footer>
             <span class="dialog-footer">
@@ -80,10 +81,10 @@
 </template>
 <script setup lang="ts">
 import DrawerHeader from '@/components/drawer-header/index.vue';
+import MarkDownEditor from '@/components/mkdown-editor/index.vue';
+
 import { getSettingInfo, loadReleaseNotes, loadUpgradeInfo, upgrade } from '@/api/modules/setting';
-import MdEditor from 'md-editor-v3';
 import i18n from '@/lang';
-import 'md-editor-v3/lib/style.css';
 import { MsgSuccess } from '@/utils/message';
 import { copyText } from '@/utils/util';
 import { onMounted, ref, computed } from 'vue';
@@ -92,7 +93,7 @@ import { ElMessageBox } from 'element-plus';
 import { storeToRefs } from 'pinia';
 
 const globalStore = GlobalStore();
-const { isDarkTheme } = storeToRefs(globalStore);
+const { docsUrl } = storeToRefs(globalStore);
 
 const mobile = computed(() => {
     return globalStore.isMobile();
@@ -121,16 +122,23 @@ const handleClose = () => {
     drawerVisible.value = false;
 };
 
-const toHalo = () => {
-    window.open('https://www.lxware.cn/1panel' + '', '_blank', 'noopener,noreferrer');
+const toLxware = () => {
+    if (!globalStore.isIntl) {
+        window.open('https://www.lxware.cn/1panel' + '', '_blank', 'noopener,noreferrer');
+    } else {
+        window.open('https://1panel.pro/pricing' + '', '_blank', 'noopener,noreferrer');
+    }
 };
 
 const toDoc = () => {
-    window.open('https://1panel.cn/docs/', '_blank', 'noopener,noreferrer');
+    window.open(docsUrl.value, '_blank', 'noopener,noreferrer');
 };
 
 const toForum = () => {
-    window.open('https://bbs.fit2cloud.com/c/1p/7', '_blank');
+    let url = globalStore.isIntl
+        ? 'https://github.com/1Panel-dev/1Panel/discussions'
+        : 'https://bbs.fit2cloud.com/c/1p/7';
+    window.open(url, '_blank');
 };
 
 const toGithub = () => {
@@ -195,11 +203,13 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .version {
+    margin-left: 8px;
     font-size: 14px;
     color: var(--panel-color-primary-light-4);
     text-decoration: none;
     letter-spacing: 0.5px;
     cursor: pointer;
+    font-family: auto;
 }
 .line-height {
     line-height: 25px;
